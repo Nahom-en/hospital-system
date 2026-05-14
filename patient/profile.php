@@ -66,35 +66,60 @@
 
         <div class="row">
             <div class="col-12">
-                <div class="card p-4 shadow-sm border-0 mb-4">
+                <!-- Personal Information -->
+                <div class="card border-0 shadow-sm p-4 mb-4">
                     <div class="d-flex align-items-center gap-4 mb-5 pb-3 border-bottom">
-                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                            <i data-lucide="user" size="48"></i>
+                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i data-lucide="user" size="40"></i>
                         </div>
                         <div>
-                            <h2 class="fw-bold mb-1 h4">John Doe</h2>
-                            <p class="text-muted mb-0">Patient ID: <span class="fw-semibold">#PAT-12345</span></p>
+                            <h2 class="fw-bold mb-0">Nahom</h2>
+                            <p class="text-muted small mb-0">Manage your personal details</p>
                         </div>
                     </div>
 
+                    <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                        <i data-lucide="info" class="text-primary"></i>
+                        Personal Information
+                    </h5>
                     <form action="#" method="POST">
-                        <div class="row g-4">
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <label for="name" class="form-label fw-semibold text-muted small text-uppercase">Full Name</label>
-                                <input type="text" id="name" class="form-control bg-light border-0 px-3" value="John Doe" readonly>
+                                <label for="first_name" class="form-label small fw-bold text-muted text-uppercase">First Name</label>
+                                <input type="text" id="first_name" class="form-control px-3" value="Nahom" placeholder="Enter first name">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label for="email" class="form-label fw-semibold text-muted small text-uppercase">Email Address</label>
-                                <input type="email" id="email" class="form-control bg-light border-0 px-3" value="john.doe@example.com" readonly>
+                                <label for="last_name" class="form-label small fw-bold text-muted text-uppercase">Last Name</label>
+                                <input type="text" id="last_name" class="form-control px-3" value="Doe" placeholder="Enter last name">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="email" class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
+                                <input type="email" id="email" class="form-control px-3 bg-light" value="nahom@example.com" readonly>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="phone" class="form-label small fw-bold text-muted text-uppercase">Phone</label>
+                                <input type="tel" id="phone" class="form-control px-3" value="+251 911 234 567" placeholder="Enter phone number">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="gender" class="form-label small fw-bold text-muted text-uppercase">Gender</label>
+                                <select id="gender" class="form-select px-3">
+                                    <option value="male" selected>Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="dob" class="form-label small fw-bold text-muted text-uppercase">Date of Birth (DOB)</label>
+                                <input type="date" id="dob" class="form-control px-3" value="1995-01-01">
                             </div>
                             <div class="col-12">
-                                <label for="phone" class="form-label fw-semibold text-muted small text-uppercase">Phone Number</label>
-                                <input type="tel" id="phone" class="form-control px-3" value="+1 234 567 890">
+                                <label for="address" class="form-label small fw-bold text-muted text-uppercase">Address</label>
+                                <textarea id="address" class="form-control px-3" rows="3" placeholder="Enter your full address">Bole, Addis Ababa, Ethiopia</textarea>
                             </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary px-5 py-3 mt-2">
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-primary px-5 py-3 fw-bold">
                                     <i data-lucide="save" class="me-2"></i>
-                                    Update Profile
+                                    Save Changes
                                 </button>
                             </div>
                         </div>
@@ -103,6 +128,8 @@
             </div>
         </div>
     </main>
+
+
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
