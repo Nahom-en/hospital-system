@@ -92,10 +92,7 @@ if (isset($_POST['register'])) {
             <!-- Left Side: Info (Desktop Only) -->
             <div class="auth-info-side">
                 <div class="mb-auto">
-                    <div class="auth-logo">
-                        <i data-lucide="hospital"></i>
-                        <span>MedFlow</span>
-                    </div>
+                    <!-- Logo removed -->
                 </div>
                 <div class="mb-auto py-5">
                     <h1 class="display-5 fw-bold mb-4">Join Our <br><span class="text-primary">Community.</span></h1>
@@ -115,7 +112,7 @@ if (isset($_POST['register'])) {
             <div class="auth-form-side">
                 <div class="mb-5">
                     <h2 class="fw-bold mb-2">Create Account</h2>
-                    <p class="text-muted">Start your journey with MedFlow today.</p>
+                    <p class="text-muted">Start your journey with us today.</p>
                 </div>
 
                 <?php if (!empty($error)): ?>
@@ -179,13 +176,6 @@ if (isset($_POST['register'])) {
                                    minlength="6"
                                    required>
                         </div>
-                    </div>
-
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="terms" required>
-                        <label class="form-check-label small text-muted" for="terms">
-                            I agree to the <a href="#" class="text-primary text-decoration-none">Terms of Service</a> and <a href="#" class="text-primary text-decoration-none">Privacy Policy</a>
-                        </label>
                     </div>
 
                     <button type="submit" name="register" class="btn btn-primary w-100 py-3 mb-4">

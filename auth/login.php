@@ -100,10 +100,7 @@ if (isset($_POST['login'])) {
             <!-- Left Side: Info (Desktop Only) -->
             <div class="auth-info-side">
                 <div class="mb-auto">
-                    <div class="auth-logo">
-                        <i data-lucide="hospital"></i>
-                        <span>MedFlow</span>
-                    </div>
+                    <!-- Logo removed -->
                 </div>
                 <div class="mb-auto py-5">
                     <h1 class="display-5 fw-bold mb-4">Your Health, <br><span class="text-primary">Simplified.</span></h1>
@@ -165,13 +162,6 @@ if (isset($_POST['login'])) {
                                    placeholder="••••••••"
                                    required>
                         </div>
-                    </div>
-
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="remember">
-                        <label class="form-check-label small text-muted" for="remember">
-                            Remember me for 30 days
-                        </label>
                     </div>
 
                     <button type="submit" name="login" class="btn btn-primary w-100 py-3 mb-4">
