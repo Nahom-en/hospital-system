@@ -4,6 +4,7 @@
 *.swp
 *.swo
 
+
 # Composer
 vendor/
 composer.phar
