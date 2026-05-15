@@ -33,6 +33,12 @@ require_role(3); // 3 is Admin
                     </a>
                 </li>
                 <li>
+                    <a href="./register_doctor.php">
+                        <i data-lucide="user-plus"></i>
+                        <span>Register Doctor</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#">
                         <i data-lucide="settings"></i>
                         <span>System Settings</span>
