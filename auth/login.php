@@ -50,6 +50,16 @@ if (isset($_POST['login'])) {
                     $_SESSION['role_id'] = $user['role_id'];
                     $_SESSION['logged_in'] = true;
 
+                    // Patient Profile Check
+                    if ($user['role_id'] == 1) {
+                        $checkStmt = $pdo->prepare("SELECT patient_id FROM patient WHERE user_id = ?");
+                        $checkStmt->execute([$user['user_id']]);
+                        if (!$checkStmt->fetch()) {
+                            header("Location: ../patient/profile.php");
+                            exit();
+                        }
+                    }
+
                     // STEP 13: Redirect based on role using our helper
                     redirect_if_logged_in();
                     

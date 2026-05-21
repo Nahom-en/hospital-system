@@ -43,6 +43,12 @@ require_role(2); // 2 is Doctor
                         <span>Schedule</span>
                     </a>
                 </li>
+                <li>
+                    <a href="./notifications.php">
+                        <i data-lucide="bell"></i>
+                        <span>Notifications</span>
+                    </a>
+                </li>
                 <li style="margin-top: auto; padding-top: 2rem;">
                     <a href="../auth/logout.php" class="text-danger">
                         <i data-lucide="log-out"></i>

@@ -88,21 +88,27 @@ if (isset($_POST['register_doctor'])) {
                     </a>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="./manage_doctors.php">
+                        <i data-lucide="stethoscope"></i>
+                        <span>Manage Doctors</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="./manage_patients.php">
                         <i data-lucide="users"></i>
-                        <span>Manage Users</span>
+                        <span>Manage Patients</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="./all_appointments.php">
+                        <i data-lucide="calendar"></i>
+                        <span>All Appointments</span>
                     </a>
                 </li>
                 <li>
                     <a href="./register_doctor.php" class="active">
                         <i data-lucide="user-plus"></i>
                         <span>Register Doctor</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i data-lucide="settings"></i>
-                        <span>System Settings</span>
                     </a>
                 </li>
                 <li style="margin-top: auto; padding-top: 2rem;">

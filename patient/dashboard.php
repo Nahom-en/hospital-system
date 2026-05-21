@@ -1,6 +1,16 @@
 <?php
 require_once '../includes/auth_helper.php';
 require_role(1); // 1 is Patient
+require_once '../config/database.php';
+require_once '../includes/notification_helper.php';
+
+$user_id = $_SESSION['user_id'];
+$notifications = get_notifications($pdo, $user_id, 3);
+// Fetch patient details like first name
+$stmt = $pdo->prepare("SELECT firstname FROM patient WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$patient = $stmt->fetch();
+$first_name = $patient ? $patient['firstname'] : 'Patient';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +79,7 @@ require_role(1); // 1 is Patient
                 </button>
                 <div>
                     <p class="text-muted small fw-bold text-uppercase mb-1" id="time-greeting">Welcome</p>
-                    <h1 class="header-title h2 mb-0 fw-bold">Welcome, <span class="text-primary">Nahom</span></h1>
+                    <h1 class="header-title h2 mb-0 fw-bold">Welcome, <span class="text-primary"><?= htmlspecialchars($first_name) ?></span></h1>
                 </div>
             </div>
             <a href="./bookappointment.php" class="btn btn-primary px-4 py-2 fw-bold d-none d-md-flex align-items-center gap-2 shadow-sm rounded-3">
@@ -188,44 +198,24 @@ require_role(1); // 1 is Patient
                     Recent Notifications
                 </h4>
                 <div class="card border-0 shadow-sm p-4">
-                    <div class="d-flex flex-column gap-4">
-                        <!-- Notification Item -->
-                        <div class="d-flex gap-3 pb-3 border-bottom">
-                            <div class="bg-success-subtle text-success p-2 rounded-circle flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i data-lucide="check" size="18"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-1">Appointment Approved</h6>
-                                <p class="text-muted small mb-1">Your appointment with Dr. Smith has been approved for tomorrow.</p>
-                                <span class="text-muted" style="font-size: 10px;">2 hours ago</span>
-                            </div>
-                        </div>
-
-                        <!-- Notification Item -->
-                        <div class="d-flex gap-3 pb-3 border-bottom">
-                            <div class="bg-warning-subtle text-warning p-2 rounded-circle flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i data-lucide="info" size="18"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-1">Reminder</h6>
-                                <p class="text-muted small mb-1">Don't forget to take your prescribed medication before your visit.</p>
-                                <span class="text-muted" style="font-size: 10px;">5 hours ago</span>
-                            </div>
-                        </div>
-
-                        <!-- Notification Item -->
-                        <div class="d-flex gap-3">
-                            <div class="bg-primary-subtle text-primary p-2 rounded-circle flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i data-lucide="refresh-cw" size="18"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-1">Schedule Updated</h6>
-                                <p class="text-muted small mb-1">The hospital schedule for next week has been updated.</p>
-                                <span class="text-muted" style="font-size: 10px;">Yesterday</span>
-                            </div>
-                        </div>
+                        <?php if (count($notifications) > 0): ?>
+                            <?php foreach ($notifications as $notif): ?>
+                                <div class="d-flex gap-3 pb-3 border-bottom <?= !$notif['is_read'] ? 'bg-light' : '' ?>">
+                                    <div class="bg-primary-subtle text-primary p-2 rounded-circle flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="bell" size="18"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><?= htmlspecialchars($notif['title']) ?></h6>
+                                        <p class="text-muted small mb-1"><?= htmlspecialchars($notif['message']) ?></p>
+                                        <span class="text-muted" style="font-size: 10px;"><?= date('M j, g:i A', strtotime($notif['created_at'])) ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-muted small text-center py-3">No recent notifications.</div>
+                        <?php endif; ?>
                     </div>
-                    <button class="btn btn-light w-100 mt-4 fw-bold text-muted small">View All Notifications</button>
+                    <a href="notifications.php" class="btn btn-light w-100 mt-4 fw-bold text-muted small">View All Notifications</a>
                 </div>
             </div>
         </div>
@@ -252,6 +242,10 @@ require_role(1); // 1 is Patient
                 !sidebar.contains(e.target) && 
                 !mobileToggle.contains(e.target) && 
                 sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
         // Dynamic Greeting
         const greetingEl = document.getElementById('time-greeting');
         const hour = new Date().getHours();
