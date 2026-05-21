@@ -46,56 +46,11 @@ try {
     $doctor = ['email' => '', 'specialization' => '', 'phone_number' => '', 'bio' => ''];
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - Doctor Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-</head>
-<body>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-            <ul>
-                <li>
-                    <a href="./dashboard.php">
-                        <i data-lucide="layout-dashboard"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./appointments.php">
-                        <i data-lucide="calendar"></i>
-                        <span>Appointments</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./schedule.php">
-                        <i data-lucide="clock"></i>
-                        <span>My Schedule</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./profile.php" class="active">
-                        <i data-lucide="user"></i>
-                        <span>Profile</span>
-                    </a>
-                </li>
-                <li style="margin-top: auto; padding-top: 2rem;">
-                    <a href="../auth/logout.php" class="text-danger">
-                        <i data-lucide="log-out"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+<?php
+$page_title = 'My Profile - Doctor Dashboard';
+require_once '../includes/header.php';
+require_once '../includes/sidebar_doctor.php';
+?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -175,12 +130,4 @@ try {
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        lucide.createIcons();
-        const mobileToggle = document.getElementById('mobile-toggle');
-        const sidebar = document.getElementById('sidebar');
-        mobileToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
-    </script>
-</body>
-</html>
+<?php require_once '../includes/footer.php'; ?>

@@ -6,68 +6,58 @@ require_once '../includes/notification_helper.php';
 
 $user_id = $_SESSION['user_id'];
 $notifications = get_notifications($pdo, $user_id, 3);
-// Fetch patient details like first name
-$stmt = $pdo->prepare("SELECT firstname FROM patient WHERE user_id = ?");
+
+// Fetch patient details
+$stmt = $pdo->prepare("SELECT patient_id, firstname FROM patient WHERE user_id = ?");
 $stmt->execute([$user_id]);
 $patient = $stmt->fetch();
 $first_name = $patient ? $patient['firstname'] : 'Patient';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Dashboard - Hospital System</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-</head>
-<body>
+$patient_id  = $patient ? $patient['patient_id'] : null;
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-            <ul>
-                <li>
-                    <a href="./dashboard.php" class="active">
-                        <i data-lucide="layout-dashboard"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./bookappointment.php">
-                        <i data-lucide="calendar-plus"></i>
-                        <span>Book Appointment</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./myappointments.php">
-                        <i data-lucide="calendar"></i>
-                        <span>My Appointments</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./profile.php">
-                        <i data-lucide="user"></i>
-                        <span>Profile</span>
-                    </a>
-                </li>
-                <li style="margin-top: auto; padding-top: 2rem;">
-                    <a href="../auth/logout.php" class="text-danger">
-                        <i data-lucide="log-out"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+// --- Real-time appointment stats ---
+$stats = ['upcoming' => 0, 'completed' => 0, 'pending' => 0, 'cancelled' => 0];
+$next_appointment = null;
+
+if ($patient_id) {
+    // Upcoming (Confirmed + future date)
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE patient_id = ? AND status = 'Confirmed' AND appointment_date >= CURDATE()");
+    $stmt->execute([$patient_id]);
+    $stats['upcoming'] = $stmt->fetchColumn();
+
+    // Completed
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE patient_id = ? AND status = 'Completed'");
+    $stmt->execute([$patient_id]);
+    $stats['completed'] = $stmt->fetchColumn();
+
+    // Pending (Scheduled, not yet confirmed)
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE patient_id = ? AND status = 'Scheduled'");
+    $stmt->execute([$patient_id]);
+    $stats['pending'] = $stmt->fetchColumn();
+
+    // Cancelled
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE patient_id = ? AND status = 'Cancelled'");
+    $stmt->execute([$patient_id]);
+    $stats['cancelled'] = $stmt->fetchColumn();
+
+    // Next upcoming appointment
+    $stmt = $pdo->prepare("
+        SELECT a.*, d.firstname, d.lastname, d.specialization
+        FROM appointments a
+        JOIN doctors d ON a.doctor_id = d.doctor_id
+        WHERE a.patient_id = ? AND a.appointment_date >= CURDATE()
+          AND a.status IN ('Scheduled','Confirmed')
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+        LIMIT 1
+    ");
+    $stmt->execute([$patient_id]);
+    $next_appointment = $stmt->fetch();
+}
+?>
+<?php
+$page_title = 'Patient Dashboard - Hospital System';
+require_once '../includes/header.php';
+require_once '../includes/sidebar_patient.php';
+?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -103,7 +93,7 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                         <i data-lucide="clock"></i>
                     </div>
                     <h3 class="text-muted small fw-bold text-uppercase mb-1">Upcoming Appointments</h3>
-                    <p class="h2 fw-bold mb-0">2</p>
+                    <p class="h2 fw-bold mb-0"><?= $stats['upcoming'] ?></p>
                 </div>
             </div>
 
@@ -113,7 +103,7 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                         <i data-lucide="check-circle"></i>
                     </div>
                     <h3 class="text-muted small fw-bold text-uppercase mb-1">Completed Appointments</h3>
-                    <p class="h2 fw-bold mb-0">12</p>
+                    <p class="h2 fw-bold mb-0"><?= $stats['completed'] ?></p>
                 </div>
             </div>
 
@@ -123,7 +113,7 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                         <i data-lucide="alert-circle"></i>
                     </div>
                     <h3 class="text-muted small fw-bold text-uppercase mb-1">Pending Appointments</h3>
-                    <p class="h2 fw-bold mb-0">1</p>
+                    <p class="h2 fw-bold mb-0"><?= $stats['pending'] ?></p>
                 </div>
             </div>
 
@@ -133,7 +123,7 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                         <i data-lucide="x-circle"></i>
                     </div>
                     <h3 class="text-muted small fw-bold text-uppercase mb-1">Cancelled Appointments</h3>
-                    <p class="h2 fw-bold mb-0">0</p>
+                    <p class="h2 fw-bold mb-0"><?= $stats['cancelled'] ?></p>
                 </div>
             </div>
         </div>
@@ -146,10 +136,11 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                     Next Appointment
                 </h4>
                 <div class="card border-0 shadow-sm overflow-hidden">
+                    <?php if ($next_appointment): ?>
                     <div class="card-header bg-primary py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="text-white fw-bold mb-0">Upcoming Visit</h5>
-                            <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold">Confirmed</span>
+                            <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold"><?= htmlspecialchars($next_appointment['status']) ?></span>
                         </div>
                     </div>
                     <div class="card-body p-4">
@@ -161,7 +152,8 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                                     </div>
                                     <div>
                                         <p class="text-muted small fw-semibold text-uppercase mb-1">Doctor Name</p>
-                                        <p class="h6 fw-bold mb-0">Dr. Sarah Johnson</p>
+                                        <p class="h6 fw-bold mb-0">Dr. <?= htmlspecialchars($next_appointment['firstname'] . ' ' . $next_appointment['lastname']) ?></p>
+                                        <p class="text-muted small mb-0"><?= htmlspecialchars($next_appointment['specialization']) ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -171,23 +163,34 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
                                         <i data-lucide="clock-3" size="20"></i>
                                     </div>
                                     <div>
-                                        <p class="text-muted small fw-semibold text-uppercase mb-1">Date & Time</p>
-                                        <p class="h6 fw-bold mb-0">May 20, 2024 - 10:30 AM</p>
+                                        <p class="text-muted small fw-semibold text-uppercase mb-1">Date &amp; Time</p>
+                                        <p class="h6 fw-bold mb-0"><?= date('M j, Y', strtotime($next_appointment['appointment_date'])) ?> &mdash; <?= date('g:i A', strtotime($next_appointment['start_time'])) ?></p>
                                     </div>
                                 </div>
                             </div>
+                            <?php if (!empty($next_appointment['reason'])): ?>
                             <div class="col-12">
                                 <div class="bg-light p-3 rounded-4 mt-2">
-                                    <p class="text-muted small fw-semibold text-uppercase mb-2"><i data-lucide="sticky-note" size="14" class="me-1"></i> Meeting Notes</p>
-                                    <p class="mb-0 small text-dark">Routine checkup and blood work discussion. Please bring your latest test results if available.</p>
+                                    <p class="text-muted small fw-semibold text-uppercase mb-2"><i data-lucide="sticky-note" size="14" class="me-1"></i> Reason</p>
+                                    <p class="mb-0 small text-dark"><?= htmlspecialchars($next_appointment['reason']) ?></p>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         </div>
                         <div class="mt-4 pt-3 border-top d-flex gap-2">
-                            <button class="btn btn-primary px-4">View Details</button>
-                            <button class="btn btn-outline-secondary px-4">Reschedule</button>
+                            <a href="./myappointments.php" class="btn btn-primary px-4">View All Appointments</a>
                         </div>
                     </div>
+                    <?php else: ?>
+                    <div class="card-header bg-light py-3 px-4">
+                        <h5 class="text-muted fw-bold mb-0">No Upcoming Appointments</h5>
+                    </div>
+                    <div class="card-body p-4 text-center py-5">
+                        <i data-lucide="calendar-x" size="48" class="text-muted mb-3"></i>
+                        <p class="text-muted">You have no upcoming appointments scheduled.</p>
+                        <a href="./bookappointment.php" class="btn btn-primary mt-2">Book an Appointment</a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -221,38 +224,11 @@ $first_name = $patient ? $patient['firstname'] : 'Patient';
         </div>
     </main>
 
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // Mobile Toggle Logic
-        const mobileToggle = document.getElementById('mobile-toggle');
-        const sidebar = document.getElementById('sidebar');
-
-        mobileToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 1024 && 
-                !sidebar.contains(e.target) && 
-                !mobileToggle.contains(e.target) && 
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-            }
-        });
-
-        // Dynamic Greeting
-        const greetingEl = document.getElementById('time-greeting');
-        const hour = new Date().getHours();
-        if (hour < 12) greetingEl.innerText = "Good Morning";
-        else if (hour < 17) greetingEl.innerText = "Good Afternoon";
-        else greetingEl.innerText = "Good Evening";
-    </script>
-</body>
-</html>
-
+<script>
+    const greetingEl = document.getElementById('time-greeting');
+    const hour = new Date().getHours();
+    if (hour < 12) greetingEl.innerText = "Good Morning";
+    else if (hour < 17) greetingEl.innerText = "Good Afternoon";
+    else greetingEl.innerText = "Good Evening";
+</script>
+<?php require_once '../includes/footer.php'; ?>

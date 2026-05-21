@@ -1,32 +1,17 @@
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-
-
-# Composer
-vendor/
-composer.phar
-
-# Node
-node_modules/
-npm-debug.log
-
-# Environment variables
+# Environment Variables
 .env
-.env.local
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Dependencies
+node_modules/
+vendor/
+
+# IDEs
+.vscode/
+.idea/
 
 # Logs
 *.log
-hostpial-db.sql
-palette.png 
+
+# OS Generated
+.DS_Store
+Thumbs.db

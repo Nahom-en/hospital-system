@@ -42,6 +42,8 @@ CREATE TABLE patient (
 CREATE TABLE doctors (
     doctor_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
+    firstname VARCHAR(50) NOT NULL,
+    lastname VARCHAR(50) NOT NULL,
     specialization VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),
     bio TEXT,  -- Changed to TEXT for longer bios
@@ -90,3 +92,23 @@ CREATE TABLE notification (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_user_unread (user_id, is_read)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert default roles
+INSERT INTO roles (role_id, rolename) VALUES 
+(1, 'Patient'),
+(2, 'Doctor'),
+(3, 'Admin');
+
+-- Insert default testing users (password: password123)
+INSERT INTO users (user_id, email, password, role_id) VALUES 
+(1, 'admin@hospital.com', '$2y$12$jHLMps/Ve7Ei/fXMZvfd8eo5UWPVTGy31gUP77toUeL9lzpp6Fj.G', 3),
+(2, 'doctor@hospital.com', '$2y$12$jHLMps/Ve7Ei/fXMZvfd8eo5UWPVTGy31gUP77toUeL9lzpp6Fj.G', 2),
+(3, 'patient@hospital.com', '$2y$12$jHLMps/Ve7Ei/fXMZvfd8eo5UWPVTGy31gUP77toUeL9lzpp6Fj.G', 1);
+
+-- Insert default testing doctor profile
+INSERT INTO doctors (doctor_id, user_id, firstname, lastname, specialization, phone_number, bio) VALUES 
+(1, 2, 'John', 'Doe', 'Cardiology', '1234567890', 'Expert cardiologist');
+
+-- Insert default testing patient profile
+INSERT INTO patient (patient_id, user_id, firstname, lastname, phone_number, gender, dob, address) VALUES 
+(1, 3, 'Jane', 'Smith', '0987654321', 'Female', '1990-01-01', '123 Health Ave');

@@ -85,56 +85,11 @@ if ($doctor_id) {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doctor Schedule - Hospital System</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-</head>
-<body>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-            <ul>
-                <li>
-                    <a href="./dashboard.php">
-                        <i data-lucide="layout-dashboard"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./appointments.php">
-                        <i data-lucide="calendar"></i>
-                        <span>Appointments</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./schedule.php" class="active">
-                        <i data-lucide="clock"></i>
-                        <span>Schedule</span>
-                    </a>
-                </li>
-                <li style="margin-top: auto; padding-top: 2rem;">
-                    <a href="../auth/logout.php" class="text-danger">
-                        <i data-lucide="log-out"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+<?php
+$page_title = 'Doctor Schedule - Hospital System';
+require_once '../includes/header.php';
+require_once '../includes/sidebar_doctor.php';
+?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -213,40 +168,24 @@ if ($doctor_id) {
         </form>
     </main>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // Mobile Toggle Logic
-        const mobileToggle = document.getElementById('mobile-toggle');
-        const sidebar = document.getElementById('sidebar');
-
-        if (mobileToggle) {
-            mobileToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
+<script>
+    // Toggle inputs when checkbox is unchecked
+    document.querySelectorAll('.available-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const row = this.closest('tr');
+            const inputs = row.querySelectorAll('input[type="time"]');
+            const label = row.querySelector('td.fw-bold');
+            
+            inputs.forEach(input => {
+                input.disabled = !this.checked;
             });
-        }
 
-        // Toggle inputs when checkbox is unchecked
-        document.querySelectorAll('.available-toggle').forEach(toggle => {
-            toggle.addEventListener('change', function() {
-                const row = this.closest('tr');
-                const inputs = row.querySelectorAll('input[type="time"]');
-                const label = row.querySelector('td.fw-bold');
-                
-                inputs.forEach(input => {
-                    input.disabled = !this.checked;
-                });
-
-                if (this.checked) {
-                    label.classList.remove('text-muted');
-                } else {
-                    label.classList.add('text-muted');
-                }
-            });
+            if (this.checked) {
+                label.classList.remove('text-muted');
+            } else {
+                label.classList.add('text-muted');
+            }
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+<?php require_once '../includes/footer.php'; ?>

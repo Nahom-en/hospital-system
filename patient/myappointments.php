@@ -1,63 +1,82 @@
 <?php
 require_once '../includes/auth_helper.php';
 require_role(1);
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Appointments - Hospital System</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-</head>
-<body>
+require_once '../config/database.php';
+require_once '../includes/notification_helper.php';
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-            <ul>
-                <li>
-                    <a href="./dashboard.php">
-                        <i data-lucide="layout-dashboard"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./bookappointment.php">
-                        <i data-lucide="calendar-plus"></i>
-                        <span>Book Appointment</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./myappointments.php" class="active">
-                        <i data-lucide="calendar"></i>
-                        <span>My Appointments</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="./profile.php">
-                        <i data-lucide="user"></i>
-                        <span>Profile</span>
-                    </a>
-                </li>
-                <li style="margin-top: auto; padding-top: 2rem;">
-                    <a href="../auth/logout.php" class="text-danger">
-                        <i data-lucide="log-out"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+$user_id = $_SESSION['user_id'];
+
+// Get patient_id
+$stmt = $pdo->prepare("SELECT patient_id FROM patient WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$patient = $stmt->fetch();
+$patient_id = $patient ? $patient['patient_id'] : null;
+
+$message = '';
+$message_type = '';
+
+// Handle Cancel action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_appointment']) && $patient_id) {
+    $appt_id = (int)$_POST['appointment_id'];
+    try {
+        // Verify ownership
+        $stmt = $pdo->prepare("SELECT a.*, d.user_id as doctor_user_id FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE a.appointment_id = ? AND a.patient_id = ?");
+        $stmt->execute([$appt_id, $patient_id]);
+        $appt = $stmt->fetch();
+
+        if ($appt && in_array($appt['status'], ['Scheduled', 'Confirmed'])) {
+            $stmt = $pdo->prepare("UPDATE appointments SET status = 'Cancelled' WHERE appointment_id = ? AND patient_id = ?");
+            $stmt->execute([$appt_id, $patient_id]);
+
+            // Notify the doctor
+            send_notification($pdo, $appt['doctor_user_id'],
+                'Appointment Cancelled',
+                'A patient has cancelled their appointment scheduled for ' . date('M j, Y', strtotime($appt['appointment_date'])) . '.'
+            );
+
+            $message = 'Appointment cancelled successfully.';
+            $message_type = 'success';
+        } else {
+            $message = 'Unable to cancel this appointment.';
+            $message_type = 'danger';
+        }
+    } catch (Exception $e) {
+        $message = 'Error: ' . $e->getMessage();
+        $message_type = 'danger';
+    }
+}
+
+// Fetch appointments
+$appointments = [];
+if ($patient_id) {
+    $stmt = $pdo->prepare("
+        SELECT a.*, d.firstname, d.lastname, d.specialization
+        FROM appointments a
+        JOIN doctors d ON a.doctor_id = d.doctor_id
+        WHERE a.patient_id = ?
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    ");
+    $stmt->execute([$patient_id]);
+    $appointments = $stmt->fetchAll();
+}
+
+function status_badge($status) {
+    $map = [
+        'Scheduled'  => 'bg-warning text-dark',
+        'Confirmed'  => 'bg-success',
+        'Completed'  => 'bg-primary',
+        'Cancelled'  => 'bg-secondary',
+        'No-show'    => 'bg-danger',
+    ];
+    $cls = $map[$status] ?? 'bg-secondary';
+    return "<span class=\"badge {$cls} px-3 py-2 rounded-pill\">{$status}</span>";
+}
+?>
+<?php
+$page_title = 'My Appointments - Hospital System';
+require_once '../includes/header.php';
+require_once '../includes/sidebar_patient.php';
+?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -71,13 +90,20 @@ require_role(1);
             
             <div class="search-box position-relative" style="min-width: 300px;">
                 <i data-lucide="search" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size="18"></i>
-                <input type="text" class="form-control ps-5 py-2 rounded-pill border-2" placeholder="Search by doctor or date...">
+                <input type="text" id="search-input" class="form-control ps-5 py-2 rounded-pill border-2" placeholder="Search by doctor or status...">
             </div>
         </header>
 
+        <?php if ($message): ?>
+        <div class="alert alert-<?= $message_type ?> alert-dismissible fade show border-0 rounded-3 mb-4" role="alert">
+            <?= htmlspecialchars($message) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
+
         <div class="card border-0 shadow-sm overflow-hidden">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="appointments-table">
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4 py-3">Doctor</th>
@@ -89,101 +115,56 @@ require_role(1);
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dummy Data for demonstration -->
+                        <?php if (empty($appointments)): ?>
                         <tr>
-                            <td class="ps-4 fw-bold">Dr. Sarah Johnson</td>
-                            <td>May 20, 2024</td>
-                            <td>10:30 AM</td>
-                            <td><span class="text-muted small">Routine Checkup</span></td>
-                            <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Pending</span></td>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i data-lucide="calendar-x" size="40" class="mb-3 d-block mx-auto"></i>
+                                No appointments found. <a href="./bookappointment.php">Book one now!</a>
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                        <?php foreach ($appointments as $appt): ?>
+                        <tr>
+                            <td class="ps-4 fw-bold">Dr. <?= htmlspecialchars($appt['firstname'] . ' ' . $appt['lastname']) ?><br>
+                                <small class="text-muted fw-normal"><?= htmlspecialchars($appt['specialization']) ?></small>
+                            </td>
+                            <td><?= date('M j, Y', strtotime($appt['appointment_date'])) ?></td>
+                            <td><?= date('g:i A', strtotime($appt['start_time'])) ?></td>
+                            <td><span class="text-muted small"><?= htmlspecialchars($appt['reason'] ?: '—') ?></span></td>
+                            <td><?= status_badge($appt['status']) ?></td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-light border" title="View"><i data-lucide="eye" size="16"></i></button>
-                                    <button class="btn btn-sm btn-outline-primary" title="Reschedule"><i data-lucide="calendar-clock" size="16"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger" title="Cancel"><i data-lucide="x" size="16"></i></button>
+                                    <?php if (in_array($appt['status'], ['Scheduled', 'Confirmed'])): ?>
+                                    <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                        <input type="hidden" name="appointment_id" value="<?= $appt['appointment_id'] ?>">
+                                        <button type="submit" name="cancel_appointment" class="btn btn-sm btn-outline-danger" title="Cancel">
+                                            <i data-lucide="x" size="16"></i> Cancel
+                                        </button>
+                                    </form>
+                                    <?php else: ?>
+                                    <span class="text-muted small">—</span>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td class="ps-4 fw-bold">Dr. Michael Smith</td>
-                            <td>May 15, 2024</td>
-                            <td>02:15 PM</td>
-                            <td><span class="text-muted small">Heart Consultation</span></td>
-                            <td><span class="badge bg-success px-3 py-2 rounded-pill text-white">Approved</span></td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-light border" title="View"><i data-lucide="eye" size="16"></i></button>
-                                    <button class="btn btn-sm btn-outline-primary" title="Reschedule"><i data-lucide="calendar-clock" size="16"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger" title="Cancel"><i data-lucide="x" size="16"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-4 fw-bold">Dr. Emily Williams</td>
-                            <td>May 10, 2024</td>
-                            <td>09:00 AM</td>
-                            <td><span class="text-muted small">Fever and Cold</span></td>
-                            <td><span class="badge bg-primary px-3 py-2 rounded-pill text-white">Completed</span></td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-light border" title="View"><i data-lucide="eye" size="16"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-4 fw-bold">Dr. David Brown</td>
-                            <td>May 05, 2024</td>
-                            <td>11:45 AM</td>
-                            <td><span class="text-muted small">Skin Allergy</span></td>
-                            <td><span class="badge bg-danger px-3 py-2 rounded-pill text-white">Rejected</span></td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-light border" title="View"><i data-lucide="eye" size="16"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-4 fw-bold">Dr. Jessica Lee</td>
-                            <td>May 01, 2024</td>
-                            <td>04:30 PM</td>
-                            <td><span class="text-muted small">Dental Pain</span></td>
-                            <td><span class="badge bg-secondary px-3 py-2 rounded-pill text-white">Cancelled</span></td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-light border" title="View"><i data-lucide="eye" size="16"></i></button>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // Mobile Toggle Logic
-        const mobileToggle = document.getElementById('mobile-toggle');
-        const sidebar = document.getElementById('sidebar');
-
-        mobileToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
+<script>
+    // Live search
+    const searchInput = document.getElementById('search-input');
+    if(searchInput) {
+        searchInput.addEventListener('input', function() {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#appointments-table tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
         });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 1024 && 
-                !sidebar.contains(e.target) && 
-                !mobileToggle.contains(e.target) && 
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-            }
-        });
-    </script>
-</body>
-</html>
-
+    }
+</script>
+<?php require_once '../includes/footer.php'; ?>
